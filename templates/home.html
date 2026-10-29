@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>我的衣櫃</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Microsoft JhengHei", sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      background: linear-gradient(180deg, #f3ece1 0%, #e7dbc9 100%);
+    }
+    h1 { color: #5b4636; margin: 0; letter-spacing: 4px; }
+    p.hint { color: #8a7663; margin: 0; }
+
+    .wardrobe {
+      position: relative;
+      width: 460px;
+      height: 420px;
+      filter: drop-shadow(0 18px 24px rgba(90, 66, 46, .35));
+    }
+
+    /* 櫃體 */
+    .body {
+      position: absolute;
+      inset: 0 0 34px 0;
+      background: linear-gradient(180deg, #8b5e3c 0%, #7a4f31 100%);
+      border: 6px solid #68412a;
+      border-radius: 10px 10px 6px 6px;
+      display: flex;
+      gap: 6px;
+      padding: 14px;
+      overflow: hidden;
+    }
+    /* 櫃內（打開門後可見） */
+    .inside {
+      flex: 1;
+      background: linear-gradient(180deg, #5b3a24 0%, #4a2f1d 100%);
+      border-radius: 4px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .rail {
+      height: 6px;
+      background: #d9c7a7;
+      border-radius: 3px;
+      box-shadow: 0 2px 3px rgba(0,0,0,.4);
+    }
+    .hangers { display: flex; justify-content: space-around; padding-top: 10px; }
+    .hanger { width: 34px; height: 46px; border: 3px solid #cbb894; border-bottom: none; border-radius: 6px 6px 0 0; }
+    .shelf { height: 8px; background: #6d4529; border-radius: 2px; }
+    .folded { display: flex; gap: 8px; }
+    .folded span { flex: 1; height: 22px; border-radius: 4px; }
+
+    /* 櫃門 */
+    .door {
+      position: absolute;
+      top: 8px;
+      bottom: 42px;
+      width: calc(50% - 14px);
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 12px, rgba(0,0,0,.05) 12px 24px),
+        linear-gradient(180deg, #a9713f 0%, #94602f 55%, #855426 100%);
+      border: 5px solid #68412a;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: transform .55s cubic-bezier(.4,.1,.2,1), box-shadow .3s;
+      transform-origin: left center;
+      box-shadow: inset 0 0 0 4px rgba(255,255,255,.08);
+    }
+    .door::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #ffe9a8, #c9a13f 60%, #8a6a1e);
+      transform: translateY(-50%);
+      box-shadow: 0 2px 4px rgba(0,0,0,.5);
+    }
+    .door.left { left: 14px; }
+    .door.left::after { right: 10px; }
+    .door.right { right: 14px; transform-origin: right center; }
+    .door.right::after { left: 10px; }
+
+    .door:hover { box-shadow: inset 0 0 0 4px rgba(255,255,255,.18), 0 0 22px rgba(255, 232, 170, .45); }
+    .wardrobe.open .door.left { transform: perspective(900px) rotateY(-78deg); }
+    .wardrobe.open .door.right { transform: perspective(900px) rotateY(78deg); }
+
+    /* 底座與櫃腳 */
+    .base {
+      position: absolute;
+      left: 0; right: 0; bottom: 22px;
+      height: 22px;
+      background: #68412a;
+      border-radius: 0 0 8px 8px;
+    }
+    .leg {
+      position: absolute;
+      bottom: 0;
+      width: 22px;
+      height: 24px;
+      background: #5a3a25;
+      border-radius: 0 0 5px 5px;
+    }
+    .leg.l { left: 34px; }
+    .leg.r { right: 34px; }
+  </style>
+</head>
+<body>
+  <h1>我的衣櫃</h1>
+
+  <div class="wardrobe" id="wardrobe" title="點擊櫃門進入衣櫃">
+    <div class="body">
+      <div class="inside">
+        <div>
+          <div class="rail"></div>
+          <div class="hangers">
+            <div class="hanger"></div>
+            <div class="hanger"></div>
+            <div class="hanger"></div>
+            <div class="hanger"></div>
+          </div>
+        </div>
+        <div class="shelf"></div>
+        <div class="folded">
+          <span style="background:#dfe7ef"></span>
+          <span style="background:#e9d9c6"></span>
+          <span style="background:#cfd8c7"></span>
+        </div>
+        <div class="shelf"></div>
+      </div>
+    </div>
+
+    <div class="door left" data-door></div>
+    <div class="door right" data-door></div>
+
+    <div class="base"></div>
+    <div class="leg l"></div>
+    <div class="leg r"></div>
+  </div>
+
+  <p class="hint">點擊櫃門，打開衣櫃</p>
+
+  <p style="margin:0; display:flex; gap:12px;">
+    <a href="{{ url_for('today') }}"
+       style="padding:7px 16px; border-radius:20px; background:#fff; border:1px solid #d4c4b0; text-decoration:none; font-size:14px;">今日穿搭</a>
+    <a href="{{ url_for('history') }}"
+       style="padding:7px 16px; border-radius:20px; background:#fff; border:1px solid #d4c4b0; text-decoration:none; font-size:14px;">歷史紀錄</a>
+    <a href="{{ url_for('settings') }}"
+       style="padding:7px 16px; border-radius:20px; background:#fff; border:1px solid #d4c4b0; text-decoration:none; font-size:14px;">設定</a>
+  </p>
+
+  <script>
+    const wardrobe = document.getElementById("wardrobe");
+    let opened = false;
+
+    document.querySelectorAll("[data-door]").forEach(door => {
+      door.addEventListener("click", () => {
+        if (opened) return;
+        opened = true;
+        wardrobe.classList.add("open");
+        setTimeout(() => { window.location.href = "{{ url_for('wardrobe_view') }}"; }, 550);
+      });
+    });
+  </script>
+</body>
+</html>

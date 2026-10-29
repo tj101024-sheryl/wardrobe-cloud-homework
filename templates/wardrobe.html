@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>衣櫃 - 我的單品</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="topbar">
+    <h1>我的衣櫃</h1>
+    <nav>
+      <a href="{{ url_for('home') }}">回首頁</a>
+      <a href="{{ url_for('wardrobe_view') }}" class="active">單品</a>
+      <a href="{{ url_for('today') }}">今日穿搭</a>
+      <a href="{{ url_for('history') }}">歷史紀錄</a>
+      <a href="{{ url_for('settings') }}">設定</a>
+    </nav>
+  </div>
+
+  <div class="wrap">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="flash {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="panel">
+      <h3>貼商品連結，自動抓圖入庫</h3>
+      <form id="preview-form" class="row">
+        <input type="text" id="url" name="url" placeholder="貼上 UNIQLO / GU / NET / 蝦皮 / GRL 等商品連結"
+               style="flex:1; min-width:260px;">
+        <button type="submit">預覽</button>
+      </form>
+
+      <div class="preview-box" id="preview-box">
+        <img id="pv-img" src="" alt="商品圖">
+        <div class="detail">
+          <input type="text" id="pv-name" placeholder="商品名稱">
+          <div class="row">
+            <select id="pv-category">
+              {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+            </select>
+            <input type="text" id="pv-price" placeholder="價格" style="width:110px;">
+            <input type="text" id="pv-shop" placeholder="店家/品牌">
+          </div>
+          <div class="row">
+            <button type="button" id="pv-save">放入衣櫃</button>
+            <button type="button" class="ghost" id="pv-cancel">取消</button>
+            <span class="meta" id="pv-url" style="font-size:12px; color:#8a7663; word-break:break-all;"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>手動上傳照片加入單品</h3>
+      <form action="{{ url_for('add_item') }}" method="post" enctype="multipart/form-data" class="row">
+        <input type="hidden" name="source" value="manual">
+        <input type="text" name="name" placeholder="名稱（ex. 藍色條紋襯衫）">
+        <select name="category">
+          {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+        </select>
+        <input type="file" name="photo" accept="image/*">
+        <button type="submit">加入</button>
+      </form>
+    </div>
+
+    <div class="filters">
+      <a href="{{ url_for('wardrobe_view') }}" class="{{ 'active' if not current }}">全部</a>
+      {% for c in categories %}
+        <a href="{{ url_for('wardrobe_view', category=c) }}"
+           class="{{ 'active' if current == c }}">{{ c }} ({{ counts[c] }})</a>
+      {% endfor %}
+    </div>
+
+    <div class="grid">
+      {% for item in items %}
+      <div class="card">
+        <div class="thumb">
+          {% if item.image %}<img src="{{ url_for('static', filename=item.image) }}" alt="{{ item.name }}">
+          {% else %}無圖片{% endif %}
+        </div>
+        <div class="info">
+          <div class="name">{{ item.name }}</div>
+          <div class="row">
+            <span class="tag">{{ item.category }}</span>
+            {% if item.price %}<span class="meta">{{ item.price }}</span>{% endif %}
+          </div>
+          {% if item.shop %}<div class="meta">{{ item.shop }}</div>{% endif %}
+          {% if item.url %}<a class="meta" href="{{ item.url }}" target="_blank" style="font-size:12px;">商品頁</a>{% endif %}
+        </div>
+        <div class="actions">
+          <form action="{{ url_for('edit_item', item_id=item.id) }}" method="post" class="row" style="width:100%; gap:6px;">
+            <input type="text" name="name" value="{{ item.name }}" style="flex:1; min-width:90px; font-size:12px;">
+            <select name="category" style="font-size:12px; padding:4px;">
+              {% for c in categories %}
+                <option value="{{ c }}" {{ 'selected' if c == item.category }}>{{ c }}</option>
+              {% endfor %}
+            </select>
+            <button class="sm ghost" type="submit">改名</button>
+          </form>
+          <form action="{{ url_for('delete_item', item_id=item.id) }}" method="post">
+            <button class="sm danger" type="submit"
+                    onclick="return confirm('確定刪除 {{ item.name }}？')">刪除</button>
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <div class="empty" style="grid-column:1/-1;">這個分類還沒有單品，先貼連結或上傳照片吧</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("preview-form");
+    const box = document.getElementById("preview-box");
+    let previewData = null;
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const url = document.getElementById("url").value.trim();
+      if (!url) return;
+      box.classList.add("show");
+      document.getElementById("pv-name").value = "讀取中…";
+      document.getElementById("pv-img").removeAttribute("src");
+
+      const body = new FormData();
+      body.append("url", url);
+      try {
+        const res = await fetch("{{ url_for('preview') }}", { method: "POST", body });
+        const data = await res.json();
+        if (!data.ok) {
+          alert(data.error || "抓取失敗，可改用手動上傳");
+          box.classList.remove("show");
+          return;
+        }
+        previewData = data;
+        document.getElementById("pv-img").src = data.image;
+        document.getElementById("pv-name").value = data.name || "";
+        document.getElementById("pv-price").value = data.price || "";
+        document.getElementById("pv-shop").value = data.shop || "";
+        document.getElementById("pv-url").textContent = data.url;
+      } catch (err) {
+        alert("連線錯誤：" + err);
+        box.classList.remove("show");
+      }
+    });
+
+    document.getElementById("pv-cancel").addEventListener("click", () => {
+      box.classList.remove("show");
+      previewData = null;
+    });
+
+    document.getElementById("pv-save").addEventListener("click", async () => {
+      if (!previewData) return;
+      const body = new FormData();
+      body.append("source", "link");
+      body.append("name", document.getElementById("pv-name").value.trim());
+      body.append("category", document.getElementById("pv-category").value);
+      body.append("price", document.getElementById("pv-price").value.trim());
+      body.append("shop", document.getElementById("pv-shop").value.trim());
+      body.append("url", previewData.url);
+      body.append("image", previewData.image);
+      await fetch("{{ url_for('add_item') }}", { method: "POST", body });
+      location.reload();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+
+wardrobe.db
+wardrobe.db-*
+
+static/uploads/*
+!static/uploads/.gitkeep

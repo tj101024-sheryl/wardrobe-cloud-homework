@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>穿搭歷史紀錄</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="topbar">
+    <h1>歷史紀錄</h1>
+    <nav>
+      <a href="{{ url_for('home') }}">回首頁</a>
+      <a href="{{ url_for('wardrobe_view') }}">單品</a>
+      <a href="{{ url_for('today') }}">今日穿搭</a>
+      <a href="{{ url_for('history') }}" class="active">歷史紀錄</a>
+      <a href="{{ url_for('settings') }}">設定</a>
+    </nav>
+  </div>
+
+  <div class="wrap">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="flash {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="filters">
+      <a href="{{ url_for('history') }}" class="{{ 'active' if not current_tag }}">全部</a>
+      {% for t in tags %}
+        <a href="{{ url_for('history', tag=t.name) }}"
+           class="{{ 'active' if current_tag == t.name }}">{{ t.name }} ({{ t.n }})</a>
+      {% endfor %}
+    </div>
+
+    {% for o in outfits %}
+    <div class="panel history-card">
+      <div class="date-head">
+        {{ o.wear_date }}
+        {% for t in o['tags'] %}<span class="tag" style="margin-left:8px;">{{ t.name }}</span>{% endfor %}
+      </div>
+      <div class="summary">
+        {% if o.photo %}
+          <img class="photo" src="{{ url_for('static', filename=o.photo) }}" alt="穿搭照">
+        {% endif %}
+        <div class="list">
+          {% for it in o['items'] %}
+          <div class="outfit-item">
+            {% if it.image %}<img src="{{ url_for('static', filename=it.image) }}" alt="{{ it.name }}">
+            {% else %}<div class="ph">無圖</div>{% endif %}
+            <div><span class="tag">{{ it.category }}</span> {{ it.name }}</div>
+          </div>
+          {% else %}那天沒有記錄單品{% endfor %}
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="empty">
+      {% if current_tag %}「{{ current_tag }}」還沒有穿搭紀錄{% else %}還沒有穿搭紀錄，先到「今日穿搭」配一組吧{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</body>
+</html>

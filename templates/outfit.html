@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>今日穿搭</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="topbar">
+    <h1>今日穿搭</h1>
+    <nav>
+      <a href="{{ url_for('home') }}">回首頁</a>
+      <a href="{{ url_for('wardrobe_view') }}">單品</a>
+      <a href="{{ url_for('today') }}" class="active">今日穿搭</a>
+      <a href="{{ url_for('history') }}">歷史紀錄</a>
+      <a href="{{ url_for('settings') }}">設定</a>
+    </nav>
+  </div>
+
+  <div class="wrap">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="flash {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% if is_today %}
+    <div class="panel">
+      <div class="row" style="justify-content:space-between;">
+        <strong>{{ wear_date }}（今天）</strong>
+        <div class="row">
+          <form action="{{ url_for('random_outfit') }}" method="post">
+            <button type="submit" class="ghost">隨機幫我配</button>
+          </form>
+          <form action="{{ url_for('save_today') }}" method="post" id="save-form">
+            <button type="submit">儲存穿搭</button>
+          </form>
+        </div>
+      </div>
+      <div class="row" style="margin-top:14px;">
+        <span class="field-label">穿搭分類</span>
+        <div class="row" id="tag-pick">
+          {% for t in tags %}
+          <button type="button" class="chip {{ 'on' if outfit and t.id in outfit['tag_ids'] }}" data-tagid="{{ t.id }}">{{ t.name }}</button>
+          {% else %}
+          <span class="meta">還沒有分類，到右上角「設定」新增吧</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {% if outfit %}
+    <div class="panel">
+      <h3>已儲存的今日穿搭</h3>
+      <div class="row" style="margin-bottom:10px;">
+        {% for t in outfit['tags'] %}<span class="tag">{{ t.name }}</span>
+        {% else %}<span class="meta" style="font-size:12px;">尚未標記分類</span>{% endfor %}
+      </div>
+      <div class="summary">
+        {% if outfit.photo %}
+          <img class="photo" src="{{ url_for('static', filename=outfit.photo) }}" alt="今日穿搭照">
+        {% else %}
+          <form action="{{ url_for('upload_outfit_photo') }}" method="post" enctype="multipart/form-data" class="row">
+            <input type="file" name="photo" accept="image/*" required>
+            <button type="submit">拍照上傳今天的穿搭</button>
+          </form>
+        {% endif %}
+        <div class="list">
+          {% for it in outfit['items'] %}
+          <div class="outfit-item">
+            {% if it.image %}<img src="{{ url_for('static', filename=it.image) }}" alt="{{ it.name }}">
+            {% else %}<div class="ph">無圖</div>{% endif %}
+            <div><span class="tag">{{ it.category }}</span> {{ it.name }}</div>
+          </div>
+          {% else %}尚無單品{% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <form id="pick-form" action="{{ url_for('save_today') }}" method="post">
+      {% for c in categories %}
+      <div class="slot">
+        <h3>{{ c }}</h3>
+        <div class="pick">
+          {% for it in by_category[c] %}
+          <button type="button" class="item" data-cat="{{ c }}" data-id="{{ it.id }}">
+            {% if it.image %}<img src="{{ url_for('static', filename=it.image) }}" alt="{{ it.name }}">
+            {% else %}<div class="ph">無圖</div>{% endif %}
+            <span>{{ it.name }}</span>
+          </button>
+          {% else %}
+          <div class="empty" style="grid-column:1/-1; padding:8px;">還沒有{{ c }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </form>
+
+    {% else %}
+    <div class="panel">
+      <strong>{{ wear_date }}</strong> 的穿搭（歷史）
+      <div class="row" style="margin-top:10px;">
+        {% for t in outfit['tags'] %}<span class="tag">{{ t.name }}</span>{% endfor %}
+      </div>
+      <div class="summary" style="margin-top:12px;">
+        {% if outfit.photo %}<img class="photo" src="{{ url_for('static', filename=outfit.photo) }}">{% endif %}
+        <div class="list">
+          {% for it in outfit['items'] %}
+          <div class="outfit-item">
+            {% if it.image %}<img src="{{ url_for('static', filename=it.image) }}">
+            {% else %}<div class="ph">無圖</div>{% endif %}
+            <div><span class="tag">{{ it.category }}</span> {{ it.name }}</div>
+          </div>
+          {% else %}尚無單品{% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <script>
+    {% if is_today %}
+    const saveForm = document.getElementById("save-form");
+    const selected = new Set();
+
+    function syncInputs() {
+      saveForm.querySelectorAll("input[name='item_id']").forEach(i => i.remove());
+      selected.forEach(id => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "item_id";
+        input.value = id;
+        saveForm.appendChild(input);
+      });
+    }
+
+    document.querySelectorAll(".pick .item").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const cat = btn.dataset.cat, id = btn.dataset.id;
+        const already = btn.classList.contains("selected");
+        document.querySelectorAll(`.pick .item[data-cat="${cat}"]`).forEach(b => {
+          b.classList.remove("selected");
+          selected.delete(b.dataset.id);
+        });
+        if (!already) {
+          btn.classList.add("selected");
+          selected.add(id);
+        }
+        syncInputs();
+      });
+    });
+
+    {% if outfit %}
+    [{% for it in outfit['items'] %}"{{ it.id }}",{% endfor %}].forEach(id => {
+      const el = document.querySelector(`.pick .item[data-id="${id}"]`);
+      if (el) {
+        el.classList.add("selected");
+        selected.add(id);
+      }
+    });
+    syncInputs();
+    {% endif %}
+
+    const pickedTags = new Set(
+      [...document.querySelectorAll("#tag-pick .chip.on")].map(c => c.dataset.tagid)
+    );
+
+    function syncTagInputs() {
+      saveForm.querySelectorAll("input[name='tag_id']").forEach(i => i.remove());
+      pickedTags.forEach(id => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "tag_id";
+        input.value = id;
+        saveForm.appendChild(input);
+      });
+    }
+
+    document.querySelectorAll("#tag-pick .chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        const id = chip.dataset.tagid;
+        if (pickedTags.has(id)) {
+          pickedTags.delete(id);
+          chip.classList.remove("on");
+        } else {
+          pickedTags.add(id);
+          chip.classList.add("on");
+        }
+        syncTagInputs();
+      });
+    });
+    syncTagInputs();
+    {% endif %}
+  </script>
+</body>
+</html>

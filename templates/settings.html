@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>設定</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="topbar">
+    <h1>設定</h1>
+    <nav>
+      <a href="{{ url_for('home') }}">回首頁</a>
+      <a href="{{ url_for('wardrobe_view') }}">單品</a>
+      <a href="{{ url_for('today') }}">今日穿搭</a>
+      <a href="{{ url_for('history') }}">歷史紀錄</a>
+      <a href="{{ url_for('settings') }}" class="active">設定</a>
+    </nav>
+  </div>
+
+  <div class="wrap">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="flash {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="panel">
+      <h3>穿搭分類（季節、場合…）</h3>
+      <p class="meta" style="margin:0 0 12px; font-size:13px;">用在「今日穿搭」的分類標籤，可多選標記當天穿搭</p>
+      <form action="{{ url_for('add_tag') }}" method="post" class="row">
+        <input type="text" name="name" placeholder="新增分類（ex. 秋天、上班、約會）" style="flex:1; min-width:220px;">
+        <button type="submit">新增分類</button>
+      </form>
+      <div class="tag-manage-list">
+        {% for t in tags %}
+        <div class="tag-manage">
+          <form action="{{ url_for('rename_tag', tag_id=t.id) }}" method="post" class="row" style="gap:6px;">
+            <input type="text" name="name" value="{{ t.name }}" style="width:110px; font-size:12px; padding:4px 8px;">
+            <button class="sm ghost" type="submit">改名</button>
+          </form>
+          <form action="{{ url_for('delete_tag', tag_id=t.id) }}" method="post">
+            <button class="sm danger" type="submit"
+                    onclick="return confirm('刪除穿搭分類「{{ t.name }}」？已標記的穿搭會一併解除')">刪除</button>
+          </form>
+          <span class="meta" style="font-size:11px;">{{ tag_usage.get(t.id, 0) }} 筆穿搭</span>
+        </div>
+        {% else %}
+        <div class="empty" style="padding:16px 0;">還沒有穿搭分類，先新增一個吧</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>單品分類（衣櫃）</h3>
+      <p class="meta" style="margin:0 0 12px; font-size:13px;">刪除分類時，裡面的單品會移到「其他」；至少要保留一個分類</p>
+      <form action="{{ url_for('add_category') }}" method="post" class="row">
+        <input type="text" name="name" placeholder="新增分類（ex. 包包、帽子、洋裝）" style="flex:1; min-width:220px;">
+        <button type="submit">新增分類</button>
+      </form>
+      <div class="tag-manage-list">
+        {% for c in categories %}
+        <div class="tag-manage">
+          <form action="{{ url_for('rename_category', cat_id=c.id) }}" method="post" class="row" style="gap:6px;">
+            <input type="text" name="name" value="{{ c.name }}" style="width:110px; font-size:12px; padding:4px 8px;">
+            <button class="sm ghost" type="submit">改名</button>
+          </form>
+          <form action="{{ url_for('delete_category', cat_id=c.id) }}" method="post">
+            <button class="sm danger" type="submit"
+                    onclick="return confirm('刪除單品分類「{{ c.name }}」？裡面的單品會移到其他分類')">刪除</button>
+          </form>
+          <span class="meta" style="font-size:11px;">{{ counts.get(c.name, 0) }} 件</span>
+        </div>
+        {% else %}
+        <div class="empty" style="padding:16px 0;">還沒有單品分類</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</body>
+</html>
