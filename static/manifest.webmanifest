@@ -1,0 +1,17 @@
+{
+  "name": "我的衣櫃 - 穿搭日記",
+  "short_name": "衣櫃",
+  "description": "管理衣櫃單品、每天搭配穿搭並記錄歷史",
+  "lang": "zh-TW",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f3ece1",
+  "theme_color": "#5b4636",
+  "icons": [
+    { "src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/static/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

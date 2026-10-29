@@ -1,4 +1,5 @@
 import hashlib
+import mimetypes
 import random
 from datetime import date
 from pathlib import Path
@@ -8,6 +9,9 @@ from werkzeug.utils import secure_filename
 
 import database as db
 from scraper import ScrapeError, scrape_product
+
+mimetypes.add_type("application/manifest+json", ".webmanifest")
+mimetypes.add_type("text/javascript", ".js")
 
 app = Flask(__name__)
 app.secret_key = "wardrobe-dev-secret"

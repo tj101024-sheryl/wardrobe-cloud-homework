@@ -2,6 +2,11 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#5b4636">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>我的衣櫃</title>
   <style>
     * { box-sizing: border-box; }
@@ -115,6 +120,7 @@
     .leg.l { left: 34px; }
     .leg.r { right: 34px; }
   </style>
+  <script src="{{ url_for('static', filename='pwa.js') }}" defer></script>
 </head>
 <body>
   <h1>我的衣櫃</h1>
